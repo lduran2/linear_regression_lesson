@@ -1,0 +1,8 @@
+# compressed documents
+*.xlsx
+
+# locked files
+.~lock.*.????#
+
+# temporary files
+*.tmp
