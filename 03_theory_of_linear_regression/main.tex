@@ -1,0 +1,1399 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+
+\title{03 Theory of linear regression}
+\author{Leomar Dur\'an}
+\date{19 September 2023}
+
+\usepackage{hyperref}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xfrac}
+\usepackage{upgreek}
+
+\usepackage[locale=US, group-separator={,}]{siunitx}
+
+\usepackage{distras}
+
+\begin{document}
+
+\maketitle
+
+\section{The linear regression model}
+
+The linear regression model works by considering each entity with $F$ features and $L$ labels as a set of coordinates in a coordinate system with as many $(F+L)$ dimensions.
+For each entity indexed $\ell \in [1..L]$, we then estimate one line that crosses through every data point coordinate with features $(x_f | f \in [1..F])$,
+\begin{equation}
+    y_\ell = \beta_0 + \beta_1x_{\ell1} + \beta_2x_{\ell2} + \cdots + \beta_F x_{\ell F} + \epsilon_\ell,
+\end{equation}
+with error term $\epsilon_\ell$ (which we may think of as additive noise) and weights given by $\vec\beta$ (to be discussed later).
+We can use this line to estimate labels given combinations of features that were not part of the original data set.
+
+This is a generalization of finding the equation of a line
+\begin{equation}
+    y = mx + b,
+\end{equation}
+given two coordinates
+and finding other coordinates on the line given either the input or output,
+however in higher dimensions.
+
+Using the comparison of the slope-intercept equation of a line, we may consider $\beta_0$ as analogous to the intercept (or bias), and $\vec\beta$ in general as analogous to the slope (which we will see later).
+
+To train the model, we estimate the weights $\vec\beta := (\beta_0, \beta_1, \dots, \beta_F)$. The model is stored as its name ``'linear regression'' and the weights. From these we can predict any new label given the features.
+
+\section{The linear classification model}
+
+The linear classification model builds on linear regression by assigning a class label based on the values of the continuous labels. The minimum working example of this is a predicate on a label
+
+\begin{equation}
+    \mathcal{P}_\theta(y) :\Leftrightarrow (y \geq \theta),
+\end{equation}
+that returns $\mathsf{true}$ if the value is at least some threshold value $\theta$, or $\mathsf{false}$ otherwise, thus assigning the class $\mathsf{true}$ (or positive) to labels $y \geq \theta$ and the class $\mathsf{false}$ (or negative) to labels $y < \theta$.
+
+For this model, we store a linear regression model, the threshold $\theta$ and the corresponding label.
+
+\section{Training the model}
+
+To train the models, we estimate find the weights, $\vec\beta := (\beta_0, \beta_1, \dots, \beta_F)$ given the relation of labels to weights and features
+\begin{equation}
+    y_\ell = \beta_0 + \beta_1x_{\ell1} + \beta_2x_{\ell2} + \cdots + \beta_F x_{\ell F} + \epsilon_\ell.
+\end{equation}
+
+If we multiply $\beta_0$ by $1$ treating the $1$ as an $x$-factor, it still remains as $\beta_0$. 
+Likewise, if we switch any $\beta_f x_f = x_f \beta_f$ due to commutativity. 
+So there is no change.
+Further, if we subtract the error term, we have
+\begin{equation}\label{eq:linear regression model, sum of x times beta}
+    (y_\ell - \epsilon_\ell) = (1)\beta_0 + x_{\ell1}\beta_1 + x_{\ell2}\beta_2 + \cdots + x_{\ell F}\beta_F,
+\end{equation}
+which is clearly a pattern of multiplication, showing $\vec\beta$ as comparative to the slope with an extra $x$ fixed at $1$.
+
+Let's explore linear algebra to explain this pattern.
+
+\subsection{Relevant concepts in linear algebra}
+
+\subsubsection{Vectors}
+A \textbf{vector} is a fixed-length linear ordered list of numbers. A common example of a vector is a set of coordinates. We say that a length-$N$ vector $\vec{v}$ over the set of complex numbers $\mathbb{C}$ is s.t. $\vec{v} \in \mathbb{C}^N$.
+
+On the other hand, the real numbers are scalar, meaning that they can be used to define vectors, and we may think of them as length-$1$ vectors. That is $\mathbb{R} = \mathbb{R}^1$.
+
+Vectors are represented as lowercase variable name ray above ($\vec{x}$) when they are isolated or handwritten, or in bold roman lowercase variable name ($\mathbf{x}$) when used in expressions where the ray would be cumbersome in typing.
+
+As for the value of the vector, one representation may be the same as with coordinates. For example, $\vec{u} := (1, 2, 3, 4) \in \mathbb{R}^4$. Another more common representation is by a column of numbers in square brackets. (Usually they are square brackets, but sometimes they may be parentheses. As always use the standard used in your context.)
+
+For example,
+\begin{equation}\label{eq:vec u}
+    \vec{u} := \left[
+        \begin{matrix}
+            1 \\*
+            2 \\*
+            3 \\*
+            4 \\*
+        \end{matrix}
+    \right] \in \mathbb{R}^4.
+\end{equation}
+
+Elements are referenced as variables with indices (normal font weight, italicized). For example, $u_2 = 2$.
+
+Vectors of the same length form vector spaces, specifically inner product spaces.
+A vector space defines addition of vectors
+%(as well as scalar multiplication, which is outside of the scope of this discussion)%
+and scalar multiplication%
+.
+An inner product space additionally defines the inner product space, another type of multiplication.
+
+%Like with real numbers,
+% vector spaces are fields.
+%the operations of addition and multiplication are defined over vectors.
+
+\paragraph{Addition} over
+vectors in the space vector space
+is performed by addition of its elements. That is, for any two length-$N$ vectors over the set of complex numbers $\vec{u}, \vec{v} \in \mathbb{C}^N$, the sum
+\begin{equation}
+    \mathbf{u} + \mathbf{v} := \left[
+        \begin{matrix}
+            u_1 + v_1 \\*
+            u_2 + v_2 \\*
+            \vdots \\*
+            u_N + v_N \\*
+        \end{matrix}
+    \right] \in \mathbb{C}^N.
+\end{equation}
+
+
+For example, if you $\vec{u}$ from \eqref{eq:vec u} and also
+\begin{equation}\label{eq:vec v}
+    \vec{v} := \left[
+        \begin{matrix}
+            5 \\*
+            5 \\*
+            5 \\*
+            5 \\*
+        \end{matrix}
+    \right] \in \mathbb{R}^4.
+\end{equation}
+Then the sum
+\begin{equation}
+    \left[
+        \begin{matrix}
+            1 \\*
+            2 \\*
+            3 \\*
+            4 \\*
+        \end{matrix}
+    \right] + \left[
+        \begin{matrix}
+            5 \\*
+            5 \\*
+            5 \\*
+            5 \\*
+        \end{matrix}
+    \right] = \mathbf{u} + \mathbf{v} = \left[
+        \begin{matrix}
+            u_1 + v_1 \\*
+            u_2 + v_2 \\*
+            u_3 + v_3 \\*
+            u_4 + v_4 \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            1 + 5 \\*
+            2 + 5 \\*
+            3 + 5 \\*
+            4 + 5 \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            6 \\*
+            7 \\*
+            8 \\*
+            9 \\*
+        \end{matrix}
+    \right] \in \mathbb{R}^4.
+\end{equation}
+
+\paragraph{Scalar multiplication}\label{para:scalar multiplication}
+of a vector is another operation defined by vector spaces.
+This is multiplication of a vector by a scalar such as a real number. For this purpose, a complex number may also be counted as a scalar. When a vector is multiplied by a scalar, each member of the vector is multiplied by the same vector in parallel. Given $\vec{u} \in \mathbb{C}^N$ and $z \in \mathbb{C}$,
+\begin{equation}
+    z\mathbf{u} := \left[
+        \begin{matrix}
+            z(u_1) \\*
+            z(u_2) \\*
+            \vdots \\*
+            z(u_N) \\*
+        \end{matrix}
+    \right] \in \mathbb{C}^N.
+\end{equation}
+
+For example, suppose we have $z := 1 + i$ and
+\begin{equation}
+    \vec{w} = \left[
+        \begin{matrix}
+            1 - i \\*
+            2 - i \\*
+            5 \\*
+            1 + 4i \\*
+        \end{matrix}
+    \right] \in \mathbb{C}^4.
+\end{equation}
+
+Then
+\begin{equation}
+    (1 + i)\!\left[
+        \begin{matrix}
+            1 - i \\*
+            2 - i \\*
+            5 \\*
+            1 + 4i \\*
+        \end{matrix}
+    \right] = z\mathbf{w} = \left[
+        \begin{matrix}
+            z(w_1) \\*
+            z(w_2) \\*
+            z(w_3) \\*
+            z(w_4) \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            (1 + i)(1 - i) \\*
+            (1 + i)(2 - i) \\*
+            (1 + i)5 \\*
+            (1 + i)(1 + 4i) \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            2 \\*
+            3 + i \\*
+            5 + 5i \\*
+            -3 + 5i \\*
+        \end{matrix}
+    \right] \in \mathbb{C}^4.
+\end{equation}
+
+\paragraph{Multiplication (dot product)}\label{para:vector multiplication}
+However, we are concerned with the inner product, for which, let us consider the set of all complex numbers as an extension of the real numbers\\*
+$\mathbb{C} := \left\{x+yi \middle| x, y \in \mathbb{R}, i^2 = -1 \right\}$.
+
+The inner product
+of two vectors in the same inner product space
+is defined as the sum of the product of each pair of parallel elements with the same index after taking the complex conjugate of the right element. 
+So for any two length-$N$ vectors over the set of complex numbers $\vec{u}, \vec{v} \in \mathbb{C}^N$, the inner product
+\begin{equation}
+    \left<\mathbf{u},\mathbf{v}\right> := \sum_{k\in 1}^N u_k\overline{v_k} =
+            u_1\overline{v_1} +
+            u_2\overline{v_2} +
+            \cdots +
+            u_N\overline{v_N}
+    \in \mathbb{C}.
+\end{equation}
+
+Now since $0 \in \mathbb{R}$, the complex conjugate of any real number $x$, $\overline{x} = \overline{x + (0)i} = \overline{x + yi} = x - yi = x - (0)i = x$. Thus for real numbers, the multiplication reduces to multiplication between the parallel elements with complex conjugation being equivalent to an identity function.
+
+For example, given $\vec{u}$ defined in \eqref{eq:vec u} and $\vec{v}$ defined in \eqref{eq:vec v}, we have the inner product
+\begin{equation}
+    \begin{aligned}
+        &\left<
+            \left[
+                \begin{matrix}
+                    1 \\*
+                    2 \\*
+                    3 \\*
+                    4 \\*
+                \end{matrix}
+            \right]\!,
+            \left[
+                \begin{matrix}
+                    5 \\*
+                    5 \\*
+                    5 \\*
+                    5 \\*
+                \end{matrix}
+            \right]
+        \right> \\*
+        ={} & \left<\mathbf{u},\mathbf{v}\right> \\*
+        ={} &
+                u_1{v_1} +
+                u_2{v_2} +
+                u_3{v_3} +
+                u_4{v_4} \\*
+        ={} &
+                1(5) +
+                2(5) +
+                3(5) +
+                4(5) \\*
+        ={} &
+                5 +
+                10 +
+                15 +
+                20 \\*
+        \in{} & \mathbb{R}.
+    \end{aligned}
+\end{equation}
+
+The inner product of a vector with itself gives us the square of its $\ell^2$-norm 
+\begin{equation}
+    \left\lVert\mathbf{u}\right\rVert_2^2 := \left<\mathbf{u},\mathbf{u}\right>.
+\end{equation}
+
+\subsubsection{Matrices}
+A \textbf{matrix} is a fixed-sized rectangular ordered array of numbers. We say that an $R$-row $C$-column matrix $\mathbf{M}$ over the set of complex numbers $\mathbb{C}$ is s.t.\\* $\mathbf{M} \in \operatorname{Mtrx}(\mathbb{C}; R\times C)$.
+
+We may think of a vector as a $1$-column matrix, sometimes called a column vector.
+
+A $1$-row matrix is called a row vector, but it is not really a vector, rather the transpose of one. This is useful for defining vectors as the transpose
+$\cdot^\dagger$
+of a row vector in one line while differentiating from a set of coordinates (but more on transposes later). For example, $\vec{u} := \left[
+    \begin{matrix}
+        1 & 2 & 3 & 4
+    \end{matrix}
+\right]^\dagger \in \mathbb{R}^4$.
+
+We can also thing of a matrix as a column vector of row vectors whose transposes are in the same vector space.
+
+\paragraph{The diagonal of a matrix} is the oblique line starting from the first element in the top row and every element moving once towards the bottom and opposite end of the matrix. That is, the diagonal of a matrix is every element where the row number and column number are equal.
+
+\paragraph{The conjugate transpose}
+of a matrix $\mathbf{M} \in \operatorname{Mtrx}(\mathbb{C}; R\times C)$, demarcated as $\mathbf{M}^\dagger$ is a matrix s.t. each member of the diagonal of the product $\mathbf{M}^\dagger \mathbf{M}$ is the square of $\ell^2$-norm $\left\lVert\vec\cdot\,\right\rVert_2^2$ of the corresponding column vector of the original matrix $M$.
+
+To find the conjugate transpose, we first find the complex conjugate of every element in the matrix. Then we swap the row and column numbers. So for example, for matrix $\mathbf{M} \in \operatorname{Mtrx}(\mathbb{C}; R\times C)$, the conjugate transpose
+\begin{equation}
+    \left[
+        \begin{matrix}
+            M_{11} & M_{12} & \cdots & M_{1C} \\*
+            M_{21} & M_{22} & \cdots & M_{2C} \\*
+            \vdots & \vdots & \ddots & \vdots \\*
+            M_{R1} & M_{R2} & \cdots & M_{RC} \\*
+        \end{matrix}
+    \right]^\dagger
+    =
+    \left[
+        \begin{matrix}
+            \overline{M_{11}} & \overline{M_{21}} & \cdots & \overline{M_{R1}}
+            \\*
+            \overline{M_{12}} & \overline{M_{22}} & \cdots & \overline{M_{R2}}
+            \\*
+            \vdots & \vdots & \ddots & \vdots
+            \\*
+            \overline{M_{1C}} & \overline{M_{2C}} & \cdots & \overline{M_{RC}}
+            \\*
+        \end{matrix}
+    \right]
+\end{equation}
+
+As noted in paragraph \ref{para:vector multiplication}, conjugation of a real number results in the same number. As a result, when the matrix is over the set of real numbers, the conjugate transpose simplifies to the element-wise transpose, denoted as $\mathbf{M}^\intercal$, where the step of complex conjugation is skipped.
+
+\paragraph{Matrix multiplication: base case}
+
+Matrix multiplication is a recursive problem. In order to understand how to multiply two larger matrices, we must learn how to multiply the base case.
+
+This base case is multiplying a row vector $\mathbf{v}^\dagger$ and a column vector $\mathbf{u}$. As it turns out this is exactly the same finding the inner product. That is $\mathbf{v}^\dagger\mathbf{u} = \left<\mathbf{u},\mathbf{v}\right>$ (as a corollary). As noted before, it is then necessary the row vector to have width $L$ corresponding to the column vector's length $L$.
+Thus for $\vec{u},\vec{v} \in \mathbb{C}^L$,
+\begin{equation}
+    \mathbf{v}^\dagger\mathbf{u} = \left[
+        \begin{matrix}
+            v_1 & v_2 & \cdots & v_L \\*
+        \end{matrix}
+    \right]
+    \left[
+        \begin{matrix}
+            u_1 \\* u_2 \\* \vdots \\* u_L \\*
+        \end{matrix}
+    \right] := \left<
+        \left[
+            \begin{matrix}
+                u_1 \\* u_2 \\* \vdots \\* u_L \\*
+            \end{matrix}
+        \right],
+        \left[
+            \begin{matrix}
+                v_1 \\* v_2 \\* \vdots \\* v_L \\*
+            \end{matrix}
+        \right]
+    \right> = \left<\mathbf{u},\mathbf{v}\right> \in \mathbb{C}.
+\end{equation}
+
+\paragraph{Matrix multiplication: recursive case}
+
+Thus, to multiply two matrices $\mathbf{M}, \mathbf{N}$, first since we are finding the inner product of rows in $\mathbf{M}$ with columns in $\mathbf{N}$, then the number of columns in $\mathbf{M}$ (\textit{i.e.}, the width of the rows in $\mathbf{M}$) must equal the number of rows in $\mathbf{N}$ (\textit{i.e.}, the length of the columns in $\mathbf{N}$). Thus, we have number of rows $R$, inner vector length $L$ and number of columns $C \in \mathbb{N}$ and
+two matrices $\mathbf{M} \in \operatorname{Mtrx}(\mathbb{C}; R\times L), \mathbf{N} \in \operatorname{Mtrx}(\mathbb{C}, L\times C)$, which will product $P \in \operatorname{Mtrx}(\mathbb{C},R\times C)$.
+
+To multiply matrices $\mathbf{M}, \mathbf{N}$, we multiply each row ${M}_{r:}$ with each column ${N}_{:c}$ for $r \in [1..R], c \in [1..C]$ which gives each product in product matrix cell $P_{rc}$.
+
+For example, we have matrices
+\begin{equation}
+    M := \left[
+        \begin{matrix}
+            1 & 2 \\*
+            4 & 5 \\*
+            7 & 8 \\*
+        \end{matrix}
+    \right] \in \operatorname{Mtrx}(\mathbb{R}, 3\times2),
+\end{equation}
+\begin{equation}
+    N := \left[
+        \begin{matrix}
+            10 & 20 & 30 & 40 \\*
+            60 & 70 & 80 & 90 \\*
+        \end{matrix}
+    \right] \in \operatorname{Mtrx}(\mathbb{R}, 2\times4).
+\end{equation}
+
+Their product
+\begin{equation}
+    \begin{aligned}
+        \mathbf{MN}
+            &{}= \left[
+                \begin{matrix}
+                    1 & 2 \\*
+                    4 & 5 \\*
+                    7 & 8 \\*
+                \end{matrix}
+            \right]
+            \left[
+                \begin{matrix}
+                    10 & 20 & 30 & 40 \\*
+                    60 & 70 & 80 & 90 \\*
+                \end{matrix}
+            \right] 
+        \\*
+            &{}\phantom:= \left[
+                \begin{matrix}
+                        \left[
+                            \begin{matrix}
+                                1 & 2 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                10 \\* 60 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                1 & 2 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                20 \\* 70 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                1 & 2 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                30 \\* 80 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                1 & 2 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                40 \\* 90 \\*
+                            \end{matrix}
+                        \right]
+                \\*[1.2em]
+                        \left[
+                            \begin{matrix}
+                                4 & 5 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                10 \\* 60 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                4 & 5 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                20 \\* 70 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                4 & 5 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                30 \\* 80 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                4 & 5 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                40 \\* 90 \\*
+                            \end{matrix}
+                        \right]
+                \\*[1.2em]
+                        \left[
+                            \begin{matrix}
+                                7 & 8 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                10 \\* 60 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                7 & 8 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                20 \\* 70 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                7 & 8 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                30 \\* 80 \\*
+                            \end{matrix}
+                        \right]
+                    &
+                        \left[
+                            \begin{matrix}
+                                7 & 8 \\*
+                            \end{matrix}
+                        \right]
+                        \left[
+                            \begin{matrix}
+                                40 \\* 90 \\*
+                            \end{matrix}
+                        \right]
+                \\*
+                \end{matrix}
+            \right]
+        \\*
+            &{}\phantom:= \left[
+                \begin{matrix}
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    1 \\* 2 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    10 \\* 60 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    1 \\* 2 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    20 \\* 70 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    1 \\* 2 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    30 \\* 80 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    1 \\* 2 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    40 \\* 90 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                \\*[1.2em]
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    4 \\* 5 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    10 \\* 60 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    4 \\* 5 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    20 \\* 70 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    4 \\* 5 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    30 \\* 80 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    4 \\* 5 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    40 \\* 90 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                \\*[1.2em]
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    7 \\* 8 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    10 \\* 60 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    7 \\* 8 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    20 \\* 70 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    7 \\* 8 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    30 \\* 80 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                    &
+                        \left<
+                            \left[
+                                \begin{matrix}
+                                    7 \\* 8 \\*
+                                \end{matrix}
+                            \right],
+                            \left[
+                                \begin{matrix}
+                                    40 \\* 90 \\*
+                                \end{matrix}
+                            \right]
+                        \right>
+                \\*
+                \end{matrix}
+            \right]
+        \\*
+            &{}\phantom:= \left[
+                \begin{matrix}
+                    130 & 160 & 190 & 220 \\*
+                    340 & 430 & 520 & 610 \\*
+                    550 & 700 & 850 & 1000 \\*
+                \end{matrix}
+            \right]
+        \\*
+            &{}\in \operatorname{Mtrx}(\mathbb{R}, 3\times4).
+    \end{aligned}
+\end{equation}
+
+\paragraph{Matrices and vectors in representations of systems of linear equations}
+
+One very important use of matrices and vectors is in the representations of systems of linear equations, which we may remember from algebra.
+
+Note: that this is different from our linear regression problem in that linear regression finds weights given inputs (features) and outputs (labels),
+whereas the system of linear equations gives inputs and outputs given weights and constants.
+
+For example, we may have the linear system of equations
+\begin{equation}\label{eq:system 1}
+    \left\{
+        \begin{array}{ll@{}}
+            L_1: & y = x + 1, \\*
+            L_2: & y = 2x - 1. \\*
+        \end{array}
+    \right.
+\end{equation}
+
+This system may be put into the standard form with all unknowns to the left side of the equal sign and the constants isolated on the right.
+\begin{equation}\label{eq:standard system 1}
+    \left\{
+        \begin{array}{ll@{}}
+            L_1: & x - y = -1, \\*
+            L_2: & 2x - y = 1. \\*
+        \end{array}
+    \right.
+\end{equation}
+Further, let's rewrite each term with an unknown so the left side is a sum of the product of each pair of coefficient and unknown. 
+\begin{equation}\label{eq:standard system 1 with coefs}
+    \left\{
+        \begin{array}{ll@{}}
+            L_1: & (1)x + (-1)y = -1, \\*
+            L_2: & (2)x + (-1)y = 1. \\*
+        \end{array}
+    \right.
+\end{equation}
+
+Well now we can rewrite these as one equation with a vector on either side.
+\begin{equation}\label{eq:linear system 1 vector}
+    \left[
+        \begin{matrix}
+            (1)x + (-1)y \\*
+            (2)x + (-1)y \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            -1 \\*
+            1 \\*
+        \end{matrix}
+    \right]
+\end{equation}
+
+In the vector on the left, we see that both elements of the vector are a sum of some multiplication of x and some multiplication of y. This means we can factor out a vector $\vec{x} := \left[\begin{matrix} x & y \\* \end{matrix}\right]^\dagger$ leaving a matrix $\mathbf{M}$.
+
+\begin{equation}\label{eq:linear system 1 matrix}
+    \left[
+        \begin{matrix}
+            1 & -1 \\*
+            2 & -1 \\*
+        \end{matrix}
+    \right]\!\left[
+        \begin{matrix}
+            x \\*
+            y \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            -1 \\*
+            1 \\*
+        \end{matrix}
+    \right]
+\end{equation}
+
+Finally, we may augment the matrix on the left with the constants on the left. This form is called an augmented matrix (represented by a matrix with prefixed with an $\mathbf{A}$).
+
+\begin{equation}\label{eq:linear system 1 matrix augmented}
+    \mathbf{AM} = \left[
+        \begin{array}{@{}*2c|c@{}}
+            1 & -1 & -1 \\*
+            2 & -1 & 1 \\*
+        \end{array}
+    \right].
+\end{equation}
+
+\paragraph{Row reduction} is an operation of transformation of a matrix. 
+
+To perform row reduction,
+we must manipulate its rows according to the following rules
+\begin{enumerate}
+    \item We may swap rows.
+    \item We may multiply a row by a nonzero scalar.
+    \item We may add rows.
+\end{enumerate}
+
+These operations are in practice just matrix multiplications by square matrices with no $0$ rows or $0$ columns. However, for the sake of clarity for this introduction, we will use the notation $R_k \leftrightarrow R_\ell$ for swapping, and $R_k \gets a_k R_k + a_\ell R_\ell$ for $k,\ell \in [1..R] a_k \in \mathbf{R}\setminus\{0\}$ for multiplying by scalars and adding rows, omitting rows that are multiplied by 0.
+
+When solving a system of equals represented in augmented matrix form, the goal is to put the augmented matrix into reduced row echelon form.
+
+Reduced row echelon form is when
+\begin{enumerate}
+    \item The leading nonzero element of each row is to the right of that of the previous row.
+    \item Zero rows (if any) are at the bottom of the matrix.
+    \item The leading nonzero element of each row is $1$.
+    \item All other elements in each column with a leading nonzero element must be $0$.
+\end{enumerate}
+The reduced row echelon form is unique to every matrix.
+
+Let's look at a more complex example of a system of linear equations, $4$ equations, $4$ unknowns in $4$ dimensions. In standard form,
+\begin{equation}\label{eq:4d linear system to solve}
+    \left\{
+        \begin{array}{ll@{}}
+            L_1: & x_1 - x_2 - x_3 + x_4 = 1, \\*
+            L_2: & 2x_1 - x_2 = 1, \\*
+            L_3: & x_1 + 4x_2 + 3x_4 = 35, \\*
+            L_4: & x_1 + 2x_2 + x_3 + x_4 = 20. \\*
+        \end{array}
+    \right.
+\end{equation}
+
+Thus we have the augmented matrix
+\begin{equation}
+        \mathbf{AM}
+        = \left[
+            \begin{array}{@{}*4c|c@{}}
+                1 & -1 & -1 & 1 &  1 \\*
+                2 & -1 &  0 & 0 &  1 \\*
+                1 &  4 &  0 & 3 & 35 \\*
+                1 &  2 &  1 & 1 & 20 \\*
+            \end{array}
+        \right]\!.
+\end{equation}
+
+We perform the row reduction.
+\begin{equation}\label{eq:row reduction example}
+    \begin{aligned}
+            &\mathbf{AM}
+    \\*
+        {}={} & \left[
+            \begin{array}{@{}*4c|c@{}}
+                1 & -1 & -1 & 1 &  1 \\*
+                2 & -1 &  0 & 0 &  1 \\*
+                1 &  4 &  0 & 3 & 35 \\*
+                1 &  2 &  1 & 1 & 20 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                R_1 \gets (-1)R_1 + R_2 \\*
+                R_2 \gets R_2 - 2R_1 \\*
+                R_3 \leftrightarrow R_4 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|c@{}}
+                1 &  0 &  1 & -1 &  0 \\*
+                0 &  1 &  2 & -2 & -1 \\*
+                1 &  2 &  1 &  1 & 20 \\*
+                1 &  4 &  0 &  3 & 35 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                \\*
+                R_3 \gets R_3 - R_1 - 2R_2 \\*
+                R_4 \gets R_4 - R_1 - 4R_2 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|c@{}}
+                1 &  0 &  1 & -1 &  0 \\*
+                0 &  1 &  2 & -2 & -1 \\*
+                0 &  0 & -4 &  6 & 22 \\*
+                0 &  0 & -9 & 12 & 39 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                \\*
+                R_3 \gets 2R_3 - R_4 \\*
+                R_4 \gets -4R_4 + 9R_3 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|c@{}}
+                1 &  0 &  1 & -1 &  0 \\*
+                0 &  1 &  2 & -2 & -1 \\*
+                0 &  0 &  1 &  0 &  5 \\*
+                0 &  0 &  0 &  6 & 42 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                \\*
+                \\*
+                R_4 \gets (1/6)R_4 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|c@{}}
+                1 &  0 &  1 & -1 &  0 \\*
+                0 &  1 &  2 & -2 & -1 \\*
+                0 &  0 &  1 &  0 &  5 \\*
+                0 &  0 &  0 &  1 &  7 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                \\*
+                R_1 \gets R_1 - R_3 + R_4 \\*
+                R_2 \gets R_2 - 2R_3 + 2R_4 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|c@{}}
+                1 &  0 &  0 &  0 &  2 \\*
+                0 &  1 &  0 &  0 &  3 \\*
+                0 &  0 &  1 &  0 &  5 \\*
+                0 &  0 &  0 &  1 &  7 \\*
+            \end{array}
+        \right]
+    \\*
+        {}={}&\operatorname{RREF}(\mathbf{AM}).
+    \\*
+    \end{aligned}
+\end{equation}
+
+So we have found that $\vec{x} = \left[\begin{matrix} 2 & 3 & 5 & 7 \end{matrix}\right]^\dagger$ given that the constants $\mathbf{M}\mathbf{x} = \vec{b} := \left[\begin{matrix} 1 & 1 & 35 & 20 \end{matrix}\right]^\dagger$.
+
+Well the constant relates to the $x_4$-intercept, $4$ being the number of columns in matrix $\mathbf{M}$, in that $\frac{b}{x_4}$ is the $x_4$-intercept. So the $x_4$ intercepts are $\frac11$ for $L_1$, undefined for $L_2$, $\frac{35}3$ for $L_3$ and $\frac{20}1$ for $L_4$.
+
+Let's suppose that we have the same weights for the unknowns $\vec{x}$, but different $x_4$-intercepts, or different constants, say
+\begin{equation}\label{eq:new constants}
+    \vec{b} := \left[\begin{matrix} 1 & -3 & 63 & 32 \end{matrix}\right]^\dagger.
+\end{equation}
+Well, the process is the same because goal the was to change the values in the first $4$ nonzero leading columns (because there are $4$ equations) to the reduced row echelon form.
+However, repeating this process for every set of constants would be wasteful.
+
+% The reduced echelon form of a matrix $\mathbf{M} \in \operatorname{Mtrx}(\mathbb{C}, R\times C)$ of size $R, C \in \mathbb{N}$, last nonzero row $r \in [1..R]$ and first non-leading column $c \in [1..C]$ is as follows
+% \begin{equation}
+    % \operatorname{RREF}(\mathbf{M}) :=
+    % \left[
+        % \begin{matrix}
+            % 1 & 0 & 0 & \cdots & 0 & M_{1c} & \cdots & M_{1C} \\*
+            % 0 & 1 & 0 & \cdots & 0 & M_{2c} & \cdots & M_{2C} \\*
+            % 0 & 0 & 1 & \cdots & 0 & M_{3c} & \cdots & M_{3C} \\*
+            % \vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \ddots & \vdots \\*
+            % 0 & 0 & 0 & \cdots & 1 & M_{rc} & \cdots & M_{rC} \\*
+            % 0 & 0 & 0 & \cdots & 0 & 0 & \cdots & 0 \\*
+            % 0 & 0 & 0 & \cdots & 0 & 0 & \cdots & 0 \\*
+            % \vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \ddots & \vdots \\*
+            % 0 & 0 & 0 & \cdots & 0 & 0 & \cdots & 0 \\*
+        % \end{matrix}
+    % \right] \in \operatorname{Mtrx}(\mathbb{C}, R\times C).
+% \end{equation}
+
+\subsubsection{Square matrices}
+
+Square matrices have special properties and operations that other matrices do not.
+
+\paragraph{The Gramian matrix}\label{para:gramian} of any matrix $\mathbf{M} \in \operatorname{Mtrx}(\mathbb{C}, R\times C)$ is defined as $G_{\mathbf{M}} := \mathbf{M}^\dagger \mathbf{M} \in \operatorname{Mtrx}\left(\mathbb{C}, C^2\right)$.
+
+\paragraph{Diagonal matrices}
+are square matrices where all nonzero elements are along the diagonal of the matrix and all other values are zero.
+
+With $N \in \mathbb{N}$, we can use the function
+\begin{equation}
+    \operatorname{diag}
+    := \vec{v} \mapsto \left[
+        \begin{matrix}
+            v_1 & 0   & \dots & 0 \\*
+            0   & v_2 & \dots & 0 \\*
+            \vdots & \vdots & \ddots & \vdots \\*
+            0   & 0   & \dots & v_3 \\*
+        \end{matrix}
+    \right]
+    : \mathbb{C}^N \to \operatorname{Mtrx}\left(\mathbb{C}, N^2\right)
+\end{equation}
+to transform a length $N$ vector into a $N^2$ matrix.
+
+For our purposes, this is just a useful shorthand and we will not deal with diagonal matrices for other uses.
+
+\paragraph{The identity matrix}
+is a special square matrix that only has $1$ values along its diagonal and only $0$ values outside of its diagonal, it is identified by\\* $\mathbf1_N \in \operatorname{Mtrx}\left(\left\{0,1\right\},N^2\right)$, where $N \in \mathbb{N}$ is the number of length of its equal sides. For example
+\begin{equation}
+    \mathbf1_4 := \operatorname{diag}\!\left[
+        \begin{matrix}
+            1 \\* 1 \\* 1 \\* 1 \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            1 & 0 & 0 & 0 \\*
+            0 & 1 & 0 & 0 \\*
+            0 & 0 & 1 & 0 \\*
+            0 & 0 & 0 & 1 \\*
+        \end{matrix}
+    \right] \in \operatorname{Mtrx}\left(\left\{0, 1\right\}, 4\times4\right).
+\end{equation}
+
+The identity matrix is useful because given sizes $R,N,C \in \mathbb{N}$, matrices $\mathbf{M} \in \operatorname{Mtrx}(\mathbb{C},R\times N), \mathbf{N} \in \operatorname{Mtrx}(\mathbb{C},N\times C)$ and identity matrix $\mathbf{1}_N$,
+it is a property that $\mathbf{M}\mathbf{1}_N = \mathbf{M}$ and $\mathbf{1}_N\mathbf{N}=\mathbf{N}$.
+
+An identity matrix of unspecified size may be referenced as $\mathbf1$.
+
+\paragraph{Matrix inverse}
+
+One property that a square matrix may have is invertibility, although not all square matrices are invertible. An invertible matrix will help us estimate the weights for the regression model.
+
+A matrix $\mathbf{M}$ is invertible if there exists $\mathbf{M}^{-1}$ s.t. $\mathbf{M}\mathbf{M}^{-1} = \mathbf{M}^{-1}\mathbf{M} = \mathbf1$.
+
+So for the first matrix multiplication, $\mathbf{M}^{-1}$ must have as many rows as $\mathbf{M}$ has columns,
+and for the second matrix multiplication $\mathbf{M}^{-1}$ must have as many columns as $\mathbf{M}$ has rows,
+and for both of these products to equal the same identity matrix, then $\mathbf{M}^{-1}$ must have the same number of rows and columns as $\mathbf{M}$.
+Thus, $\mathbf{M}$ and $\mathbf{M}^{-1}$ are both square matrices.
+
+Now as we saw earlier row reduction can be used to put a matrix into a form where the greatest leftmost square is an identity matrix if the matrix can be put in that form.
+On the other hand, we can think of it that the identity matrix can be used to record the effects of any matrix multiplication because for any matrix $\mathbf{M}$, $\mathbf{M1} = \mathbf{M}$.
+So what we are going to do is augment the matrix of coefficients by the identity matrix and perform row reduction, thereby recording all matrix multiplications.
+
+So again.
+
+\begin{equation}
+    \begin{aligned}
+            &\left[\begin{array}{@{}c|c@{}}\mathbf{M} & \mathbf{1} \end{array}\right]
+    \\*
+        {}={} & \left[
+            \begin{array}{@{}*4c|*4c@{}}
+                1 & -1 & -1 & 1 &  1 & 0 & 0 & 0 \\*
+                2 & -1 &  0 & 0 &  0 & 1 & 0 & 0 \\*
+                1 &  4 &  0 & 3 &  0 & 0 & 1 & 0 \\*
+                1 &  2 &  1 & 1 &  0 & 0 & 0 & 1 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                R_1 \gets (-1)R_1 + R_2 \\*
+                R_2 \gets R_2 - 2R_1 \\*
+                R_3 \leftrightarrow R_4 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|*4c@{}}
+                1 &  0 &  1 & -1 & -1 & 1 & 0 & 0 \\*
+                0 &  1 &  2 & -2 & -2 & 1 & 0 & 0 \\*
+                1 &  2 &  1 &  1 &  0 & 0 & 0 & 1 \\*
+                1 &  4 &  0 &  3 &  0 & 0 & 1 & 0 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                \\*
+                R_3 \gets R_3 - R_1 - 2R_2 \\*
+                R_4 \gets R_4 - R_1 - 4R_2 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|*4c@{}}
+                1 &  0 &  1 & -1 & -1 &  1 & 0 & 0 \\*
+                0 &  1 &  2 & -2 & -2 &  1 & 0 & 0 \\*
+                0 &  0 & -4 &  6 &  5 & -3 & 0 & 1 \\*
+                0 &  0 & -9 & 12 &  9 & -5 & 1 & 0 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                \\*
+                R_3 \gets 2R_3 - R_4 \\*
+                R_4 \gets -4R_4 + 9R_3 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|*4c@{}}
+                1 &  0 &  1 & -1 & -1 &  1 &  0 & 0 \\*
+                0 &  1 &  2 & -2 & -2 &  1 &  0 & 0 \\*
+                0 &  0 &  1 &  0 &  1 & -1 & -1 & 2 \\*
+                0 &  0 &  0 &  6 &  9 &  -7 & -4 & 9 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                \\*
+                \\*
+                R_4 \gets \left(\sfrac16\right)R_4 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|*4c@{}}
+                1 &  0 &  1 & -1 &        -1   &         1   &         0   &       0  \\*
+                0 &  1 &  2 & -2 &        -2   &         1   &         0   &       0  \\*
+                0 &  0 &  1 &  0 &         1   &        -1   &        -1   &       2  \\*
+                0 &  0 &  0 &  1 & \sfrac{ 9}6 & \sfrac{-7}6 & \sfrac{-4}6 & \sfrac96 \\*
+            \end{array}
+        \right]
+    \\*
+        \overstretchset{\footnotesize
+            \begin{array}{l}
+                \\*
+                R_1 \gets \left(\sfrac66\right)R_1 - \left(\sfrac66\right)R_3 + R_4 \\*
+                R_2 \gets \left(\sfrac66\right)R_2 - \left(\sfrac{12}6\right)R_3 + 2R_4 \\*
+            \end{array}
+        }{\sim} & \left[
+            \begin{array}{@{}*4c|*4c@{}}
+                1 &  0 &  0 &  0 & \sfrac{ -3}6 & \sfrac{ 5}6 & \sfrac{ 2}6 & \sfrac{-3}6 \\*
+                0 &  1 &  0 &  0 & \sfrac{ -6}6 & \sfrac{ 4}6 & \sfrac{ 4}6 & \sfrac{-6}6 \\*
+                0 &  0 &  1 &  0 &          1   &        -1   &        -1   &         2   \\*
+                0 &  0 &  0 &  1 & \sfrac{  9}6 & \sfrac{-7}6 & \sfrac{-4}6 & \sfrac{ 9}6 \\*
+            \end{array}
+        \right]
+    \\*
+        {}={}&\left[\begin{array}{@{}c|c@{}}\mathbf{1} & \mathbf{M}^{-1} \end{array}\right]\!.
+    \\*
+    \end{aligned}
+\end{equation}
+
+We can factor out $\sfrac16$ from $R_1$, $\sfrac16$ from $R_2$ and $\sfrac16$ from $R_4$ into a diagonal matrix.
+This time we produced the inverse matrix
+\begin{equation}
+    \mathbf{M}^{-1} = \left(
+        \operatorname{diag}\!\left[
+            \begin{matrix}
+                \sfrac16 \\* \sfrac16 \\* 1 \\* \sfrac16 \\*
+            \end{matrix}
+        \right]
+    \right)\!\left[
+        \begin{matrix}
+            { -3} & {  5} & { 2} & {-3} \\*
+            { -6} & {  4} & { 4} & {-6} \\*
+            {  1} &   -1  &  -1  &   2  \\*
+            {  9} & {-7} & {-4} & { 9} \\*
+        \end{matrix}
+    \right]\!,
+\end{equation}
+which encodes the row reduction of matrix $\mathbf{M}$.
+
+Now just as if we had the scalar equation $mx = b$, we may multiply both sides by $m^{-1}$ to find $m^{-1}mx = x = m^{-1}b$, we will multiply both sides of $\mathbf{M}\mathbf{x} = \mathbf{b}$ by $\mathbf{M}^{-1}$ as an analogy to find $\mathbf{M}^{-1}\mathbf{M}\mathbf{x} = \mathbf{x} = \mathbf{M}^{-1}\mathbf{b}$.
+% So we just multiply a constant vector by $\mathbf{M}^{-1}$ and this will give us the values for $\vec{x}$.
+For example, we may solve \eqref{eq:4d linear system to solve} for $\vec{x}$ by performing the matrix multiplication
+\begin{equation}\label{eq:inversion multiplication}
+    \vec{x} = \mathbf{M}^{-1}\mathbf{b} = \left(
+        \operatorname{diag}\!\left[
+            \begin{matrix}
+                \sfrac16 \\* \sfrac16 \\* 1 \\* \sfrac16 \\*
+            \end{matrix}
+        \right]
+    \right)\!\left[
+        \begin{matrix}
+            { -3} & {  5} & { 2} & {-3} \\*
+            { -6} & {  4} & { 4} & {-6} \\*
+            {  1} &   -1  &  -1  &   2  \\*
+            {  9} & {-7} & {-4} & { 9} \\*
+        \end{matrix}
+    \right]\left[
+        \begin{matrix}
+            1 \\* 1 \\* 35 \\* 20 \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            2 \\* 3 \\* 5 \\* 7 \\*
+        \end{matrix}
+    \right].
+\end{equation}
+
+Likewise, we can find the values of $\vec{x}$ given the proposed constants $\vec{b}$ in \eqref{eq:new constants}.
+
+\begin{equation}
+    \vec{x} = \mathbf{M}^{-1}\mathbf{b} = \left(
+        \operatorname{diag}\!\left[
+            \begin{matrix}
+                \sfrac16 \\* \sfrac16 \\* 1 \\* \sfrac16 \\*
+            \end{matrix}
+        \right]
+    \right)\!\left[
+        \begin{matrix}
+            { -3} & {  5} & { 2} & {-3} \\*
+            { -6} & {  4} & { 4} & {-6} \\*
+            {  1} &   -1  &  -1  &   2  \\*
+            {  9} & {-7} & {-4} & { 9} \\*
+        \end{matrix}
+    \right]\left[
+        \begin{matrix}
+            1 \\* -3 \\* 63 \\* 32 \\*
+        \end{matrix}
+    \right] = \left[
+        \begin{matrix}
+            2 \\* 7 \\* 5 \\* 11 \\*
+        \end{matrix}
+    \right].
+\end{equation}
+
+\subsection{Back to training the linear regression model}
+
+Note that although it's possible to perform linear regression with complex number, from hereon we will stay within the domain of real numbers for the sake of simplicity.
+
+So now we have covered enough linear algebra to explain the linear regression model.
+
+From \eqref{eq:linear regression model, sum of x times beta}, we have
+\begin{equation}
+    (y_\ell - \epsilon_\ell) = (1)\beta_0 + x_{\ell1}\beta_1 + x_{\ell2}\beta_2 + \cdots + x_{\ell F}\beta_F,
+\end{equation}
+
+If we consider every line $\ell$, this should now
+begin to look like linear algebra. We have a difference of vectors on the left, and a multiplication of a vector by a $1$-augmented matrix on the right.
+
+Let us first define the define the $1$-augmented feature matrix, using 
+$\vec{1}_L$, which is just a length $L$ vector with all $1$ elements,
+for multiplying the bias $\beta_0$.
+\begin{equation}
+    \mathbf{AX} := \left[
+        \begin{array}{@{}c|c@{}}
+            \vec{1}_L & \mathbf{X}
+        \end{array}
+    \right]\!.
+\end{equation}
+
+Then \eqref{eq:linear regression model, sum of x times beta} becomes
+\begin{equation}
+    \mathbf{y} - \boldsymbol\epsilon = \left(\mathbf{AX}\right)\!\boldsymbol\upbeta.
+\end{equation}
+
+Solving this model will differ from the system of linear equations because here we are solving for weights given features and label, whereas in the system of linear equations we were solving for inputs and outputs given weights and constants.
+However, we can use the same techniques.
+
+The first technique that we used was the row reduction in \eqref{eq:row reduction example}. However, we do not want to do row reduction to find a linear regression model. Our training data had $\num{16 512}\,\text{entities}\times12\,\text{features}$ (plus the augmented $1$ column).
+
+Luckily, we have your favorite spreadsheet application to handle the calculations for us. However, note that it does not perform row reduction. So this leaves our second method, which is multiplication by the matrix inverse such as \eqref{eq:inversion multiplication}. Algebra systems and spreadsheet applications generally support the matrix inverse operation. So maybe we can multiply by $(\mathbf{AX})^{-1}$.
+The only issue is that only square matrices may be inverted. This is where \nameref{para:gramian} comes into play.
+
+If we think of a vector as we do in physics (as a magnitude and direction from the origin), and the matrix as a transformation of that vector, then it makes sense that the matrix-matrix-vector product $\mathbf{M}\mathbf{N}\mathbf{x}$ is a transformation of $\mathbf{x}$ by $\mathbf{N}$ followed by a transformation of $\mathbf{M}$. In that case, taking the inverse of the transformations $(\mathbf{M}\mathbf{N})^{-1} = \mathbf{N}^{-1}\mathbf{M}^{-1}$, that is the inverse operations happen in reverse, as intuition may imply.
+
+Thus, the inverse of the Gramian matrix,
+\begin{equation}
+    G_{\mathbf{AX}}^{-1} = \left(\mathbf{AX}^\intercal\right) \left(\mathbf{AX}\right) = \left(\mathbf{AX}\right)^{-1} \left(\mathbf{AX}^\intercal\right)^{-1}.
+\end{equation}
+
+Let's assume that the feature matrix $\mathbf{AX}$ is a square matrix.
+We may find the inverse of $\mathbf{AX}$ as follows.
+%\begin{equation}
+%    \left(\mathbf{AX}\right)^{-1} = \left(\mathbf{AX}\right)^{-1} \mathbf{1} = \left(\mathbf{AX}\right)^{-1} \left(\left(\mathbf{AX}^\intercal\right)^{-1} \left(\mathbf{AX}^\intercal\right)\right) = \left(\mathbf{AX}\right)^{-1} \left(\mathbf{AX}^\intercal\right)^{-1}\left(\mathbf{AX}^\intercal\right)
+%\end{equation}
+%
+\begin{equation}
+    \begin{aligned}
+            & \left(\mathbf{AX}\right)^{-1} \\*
+        {}\overset{\text{by identity}}{\hspace\fill=}{}
+            & \left(\mathbf{AX}\right)^{-1} \mathbf{1} \\*
+        {}\overset{\text{by def'n of $\left[\mathbf{\cdot}\right]^{-1}$}}{\hspace\fill=}{}
+            & \left(\mathbf{AX}\right)^{-1} \left(\left(\mathbf{AX}^\intercal\right)^{-1} \left(\mathbf{AX}^\intercal\right)\right) \\*
+        {}\overset{\text{by association}}{\hspace\fill=}{}
+            & \left(\left(\mathbf{AX}\right)^{-1} \left(\mathbf{AX}^\intercal\right)^{-1}\right)
+                \left(\mathbf{AX}^\intercal\right) \\*
+        {}\overset{\text{by $G^{-1}$}}{\hspace\fill=}{}
+            & G_{\mathbf{AX}}^{-1}
+                \left(\mathbf{AX}^\intercal\right). \\*
+    \end{aligned}
+\end{equation}
+Thus, we can use $G_{\mathbf{AX}}^{-1} \left(\mathbf{AX}^\intercal\right)$ as a generalization of the inverse of a matrix because neither of these operations requires a square matrix.
+
+% To show the concept, let's one more equation to the system of linear equations.
+% \begin{equation}
+    % \left\{
+        % \begin{array}{ll@{}}
+            % L_1: & x_1 - x_2 - x_3 + x_4 = 2, \\*
+            % L_2: & 2x_1 - x_2 = 1, \\*
+            % L_3: & x_1 + 4x_2 + 3x_4 = 35, \\*
+            % L_4: & x_1 + 2x_2 + x_3 + x_4 = 20. \\*
+            % L_5: & 3x_1 + 2x_2 + x_3 + x_4 = 24. \\*
+        % \end{array}
+    % \right.
+% \end{equation}
+
+% So the new matrix of coefficients
+% \begin{equation}
+        % \mathbf{M}
+        % = \left[
+            % \begin{array}{@{}*5c@{}}
+                % 1 & -1 & -1 & 1 \\*
+                % 2 & -1 &  0 & 0 \\*
+                % 1 &  4 &  0 & 3 \\*
+                % 1 &  2 &  1 & 1 \\*
+                % 3 &  2 &  1 & 1 \\*
+            % \end{array}
+        % \right]\!,
+% \end{equation}
+% the transpose
+% \begin{equation}
+        % \mathbf{M}^\dagger
+        % = \left[
+            % \begin{array}{@{}*5c@{}}
+                % 1 & 2 & 1 & 1 & 3 \\*
+                % -1 & -1 & 4 & 2 & 2 \\*
+                % -1 & 0 & 0 & 1 & 1 \\*
+                % 1 & 0 & 3 & 1 & 1 \\*
+            % \end{array}
+        % \right]\!,
+% \end{equation}
+% the Gramian
+% \begin{equation}
+    % \begin{aligned}
+        % G_{\mathbf{M}}
+            % &{}= \left(\mathbf{M}^\intercal\right)\left(\mathbf{M}\right) \\*
+            % &{}= \left[
+                    % \begin{array}{@{}*5c@{}}
+                        % 1 & 2 & 1 & 1 & 3 \\*
+                        % -1 & -1 & 4 & 2 & 2 \\*
+                        % -1 & 0 & 0 & 1 & 1 \\*
+                        % 1 & 0 & 3 & 1 & 1 \\*
+                    % \end{array}
+                % \right]\!\left[
+                    % \begin{array}{@{}*5c@{}}
+                        % 1 & -1 & -1 & 1 \\*
+                        % 2 & -1 &  0 & 0 \\*
+                        % 1 &  4 &  0 & 3 \\*
+                        % 1 &  2 &  1 & 1 \\*
+                        % 3 &  2 &  1 & 1 \\*
+                    % \end{array}
+                % \right] \\*
+            % &{}= \left[
+                    % \begin{array}{@{}*5c@{}}
+                       % 16 &  9 &  3 &  8 \\*
+                        % 9 & 26 &  5 & 15 \\*
+                        % 3 &  5 &  3 &  1 \\*
+                        % 8 & 15 &  1 & 12 \\*
+                    % \end{array}
+                % \right], \\*
+    % \end{aligned}
+% \end{equation}
+% and the inverse of the Gramian
+% \begin{equation}
+    % G_{\mathbf{M}}^{-1} = \frac1{188} \left[
+        % \begin{array}{@{}*5c@{}}
+            % 85   &  140 & -248 & -211 \\*
+            % 140  &  308 & -508 & -436 \\*
+            % -248 & -508 &  916 &  724 \\*
+            % -211 & -436 &  724 &  641 \\*
+        % \end{array}.
+    % \right]
+% \end{equation}
+
+% Now we can find $\vec{x}$$ as follows.
+% \begin{equation}
+    % G_{\mathbf{M}}^{-1} \mathbf{M}^\dagger \mathbf{b} = \frac1{188} \left[
+        % \begin{array}{@{}*5c@{}}
+            % 85   &  140 & -248 & -211 \\*
+            % 140  &  308 & -508 & -436 \\*
+            % -248 & -508 &  916 &  724 \\*
+            % -211 & -436 &  724 &  641 \\*
+        % \end{array}.
+    % \right]\!\left[
+        % \begin{array}{@{}*5c@{}}
+            % 1 & 2 & 1 & 1 & 3 \\*
+            % -1 & -1 & 4 & 2 & 2 \\*
+            % -1 & 0 & 0 & 1 & 1 \\*
+            % 1 & 0 & 3 & 1 & 1 \\*
+        % \end{array}
+    % \right]\!\left[
+        % \begin{matrix}
+            % 2 \\* 1 \\* 35 \\* 20 \\* 24
+        % \end{matrix}
+    % \right] = \left[
+        
+    % \right]
+% \end{equation}
+
+Finally, the number of entities provided by our data is $\num{16 512} \gg 12$, which is the number of features. This means that the linear regression model provides more equations than there are unknowns. To fit the entities to the weights, we use the least squares approach. This approach minimizes the square of the error when comparing the expected ``ground truth'' value of the labels to the predicted value.
+
+So to estimate the labels, we assume that the error term $\boldsymbol\epsilon = \vec0_L$ and solve for the estimator of the weights $\boldsymbol\upbeta$.
+\begin{equation}
+    \hat{\boldsymbol\upbeta} = \left(G_{\mathbf{AX}}^{-1} \left(\mathbf{AX}^\intercal\right)\right) (\mathbf{AX})\hat{\boldsymbol\upbeta} = G_{\mathbf{AX}}^{-1} \left(\mathbf{AX}^\intercal\right) (\mathbf{y} - \vec{0}_L) = G_{\mathbf{AX}}^{-1} \left(\mathbf{AX}^\intercal\right) \mathbf{y}.
+\end{equation}
+
+\end{document}
