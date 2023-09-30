@@ -1,0 +1,28 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{distras}[2023-09-26t21:34:40Q distras package]
+
+% "distributed as"
+% from: https://tex.stackexchange.com/questions/43335/how-to-write-is-distributed-as-under-a-certain-hypothesis#43338
+\makeatletter
+% create top box
+\newsavebox\overstretchset@topbox
+% create bottom box
+\newsavebox\overstretchset@botbox
+% padding around the top box
+\newlength\overstretchset@topbox@hpad
+\setlength\overstretchset@topbox@hpad{0.3em}
+%% "distributed as" command
+\newcommand\overstretchset[2]{%
+    % store arguments in boxes
+    \savebox\overstretchset@topbox{%
+        \kern\overstretchset@topbox@hpad$#1$\kern\overstretchset@topbox@hpad}%
+    \savebox\overstretchset@botbox{$#2$}%
+    % perform the overset
+    \overset{\usebox\overstretchset@topbox}{%
+        % resize bottom box by width of topbox, height of bottom box
+        \resizebox{\wd\overstretchset@topbox}{\ht\overstretchset@botbox}{%
+            \usebox\overstretchset@botbox%
+        }%
+    }%
+}
+\makeatother
